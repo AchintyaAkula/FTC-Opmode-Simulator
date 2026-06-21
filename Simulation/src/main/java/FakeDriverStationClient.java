@@ -2,9 +2,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
-import java.net.Socket;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Arrays;
 
 public class FakeDriverStationClient extends JFrame {
     private static final Color BG_DARK       = new Color(0x1A, 0x1A, 0x1A);
@@ -28,25 +26,38 @@ public class FakeDriverStationClient extends JFrame {
     private JButton mainButton;
     private JButton stopButton;
 
-    private DataInputStream in;
-    private DataOutputStream out;
-    private Socket socket;
-    private final AtomicBoolean running = new AtomicBoolean(true);
-
     private Timer swingTimer;
     private long timerStartMs;
 
-    public FakeDriverStationClient(int port) {
+    private java.util.List<String> opModes;
+
+    private final DriverStationConnection connection;
+
+    public FakeDriverStationClient(int port, java.util.List<String> opModes) {
         super("FTC Driver Station");
+
+        this.opModes = opModes;
         initUI();
-        connect(port);
+
+        connection = new DriverStationConnection(
+                port,
+                telemetryArea::setText,
+                () -> {
+                    connectionLabel.setText("● CONNECTED");
+                    connectionLabel.setForeground(ACCENT_GREEN);
+                },
+                () -> {
+                    connectionLabel.setText("● DISCONNECTED");
+                    connectionLabel.setForeground(ACCENT_RED);
+                }
+        );
     }
 
     private void initUI() {
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) {
-                closeConnection();
+                connection.close();
                 dispose();
                 System.exit(0);
             }
@@ -272,7 +283,7 @@ public class FakeDriverStationClient extends JFrame {
                     timerLabel.setForeground(ACCENT_YELLOW);
                     break;
             }
-            sendState(dsState);
+            connection.sendState(dsState);
             mainButton.repaint();
             stopButton.repaint();
         });
@@ -310,92 +321,22 @@ public class FakeDriverStationClient extends JFrame {
                         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                             onStop();
                         } else {
-                            sendKey(e.getKeyCode(), true);
+                            connection.sendKey(e.getKeyCode(), true);
                         }
                     }
                     if (e.getID() == KeyEvent.KEY_RELEASED) {
-                        sendKey(e.getKeyCode(), false);
+                        connection.sendKey(e.getKeyCode(), false);
                     }
                     return false;
                 });
     }
 
-    private void connect(int port) {
-        new Thread(() -> {
-            try {
-                System.out.println("Connecting on port " + port);
-                socket = new Socket("127.0.0.1", port);
-                in  = new DataInputStream(socket.getInputStream());
-                out = new DataOutputStream(socket.getOutputStream());
-                SwingUtilities.invokeLater(() -> {
-                    connectionLabel.setText("● CONNECTED");
-                    connectionLabel.setForeground(ACCENT_GREEN);
-                });
-                readLoop();
-            } catch (IOException e) {
-                System.out.println("Connection error: " + e.getMessage());
-                closeConnection();
-            }
-        }).start();
-    }
-
-    public static final byte INPUT_TELEMETRY = 1;
-    public static final byte KEY_PACKET = 1;
-    public static final byte STATE_PACKET = 2;
-
-    private void readLoop() {
-        try {
-            while (running.get()) {
-                if (in.readByte() == INPUT_TELEMETRY) {
-                    String text = in.readUTF();
-                    SwingUtilities.invokeLater(() -> telemetryArea.setText(text));
-                }
-            }
-        } catch (IOException e) {
-            closeConnection();
-        }
-
-    }
-
-    private void closeConnection() {
-        running.set(false);
-        try { if (in  != null) in.close();  } catch (IOException ignored) {}
-        try { if (out != null) out.close(); } catch (IOException ignored) {}
-        try { if (socket != null && !socket.isClosed()) socket.close(); } catch (IOException ignored) {}
-        SwingUtilities.invokeLater(() -> {
-            connectionLabel.setText("● DISCONNECTED");
-            connectionLabel.setForeground(ACCENT_RED);
-        });
-    }
-
-    public void sendKey(int keyCode, boolean down) {
-        try {
-            if (out != null) {
-                out.writeByte(KEY_PACKET);
-                out.writeInt(keyCode);
-                out.writeBoolean(down);
-                out.flush();
-            }
-        } catch (IOException e) {
-            System.out.println("Send error: " + e.getMessage());
-        }
-    }
-
-    public void sendState(OpModeState state) {
-        try {
-            if (out != null) {
-                out.writeByte(STATE_PACKET);
-                out.writeByte(state.ordinal());
-                out.flush();
-            }
-        } catch (IOException e) {
-            System.out.println("Send error: " + e.getMessage());
-        }
-    }
-
     public static void main(String[] args) {
         // TODO send opmodes
         int port = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
-        SwingUtilities.invokeLater(() -> new FakeDriverStationClient(port));
+
+        java.util.List<String> opModes = Arrays.asList(args);
+
+        SwingUtilities.invokeLater(() -> new FakeDriverStationClient(port, opModes));
     }
 }
