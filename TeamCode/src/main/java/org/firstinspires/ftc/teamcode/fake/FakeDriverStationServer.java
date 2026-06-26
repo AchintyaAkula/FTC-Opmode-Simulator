@@ -89,15 +89,10 @@ public class FakeDriverStationServer {
                         gamepad1.dpad_right = heldKeys.contains(68);
                         gamepad1.a          = heldKeys.contains(10);
 
-                        if (heldKeys.contains(81) && heldKeys.contains(69)) {
-                            gamepad1.right_stick_x = 0; // both cancel out
-                        } else if (heldKeys.contains(81)) {
-                            gamepad1.right_stick_x = -1;
-                        } else if (heldKeys.contains(69)) {
-                            gamepad1.right_stick_x = 1;
-                        } else {
-                            gamepad1.right_stick_x = 0;
-                        }
+
+                        gamepad1.right_stick_x = (heldKeys.contains(69) ? 1 : 0) - (heldKeys.contains(81) ? 1 : 0);
+                        gamepad1.left_stick_x = (heldKeys.contains(68) ? 1 : 0) - (heldKeys.contains(65) ? 1 : 0);
+                        gamepad1.left_stick_y = (heldKeys.contains(83) ? 1 : 0) - (heldKeys.contains(87) ? 1 : 0);
 
                         break;
 
