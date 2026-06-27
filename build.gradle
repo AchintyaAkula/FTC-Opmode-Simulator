@@ -27,3 +27,39 @@ allprojects {
 repositories {
     mavenCentral()
 }
+
+tasks.register("runSimulator", JavaExec) {
+    classpath = project(":DriverStationClient").sourceSets.main.runtimeClasspath
+    mainClass = "org.jjophoven.driverstation.FakeDriverStationClient"
+}
+
+
+//tasks.register("runSimulatorServer", JavaExec) {
+//    dependsOn ":TeamCode:testDebugUnitTest"
+//
+//    doFirst {
+//        def testTask = project(":TeamCode").tasks.named("testDebugUnitTest").get()
+//        classpath = testTask.classpath + testTask.testClassesDirs
+//    }
+//
+//    mainClass = "org.junit.runner.JUnitCore"
+//    args "SimulateOpMode"
+//}
+tasks.register("runSimulatorServer", JavaExec) {
+    dependsOn ":TeamCode:testDebugUnitTest"
+
+    doFirst {
+        def testTask = project(":TeamCode").tasks.named("testDebugUnitTest").get()
+        classpath = testTask.classpath + testTask.testClassesDirs
+    }
+
+    mainClass = "org.junit.runner.JUnitCore"
+    args "SimulateOpMode"
+
+    debugOptions {
+        enabled = true
+        port = 5005
+        server = true
+        suspend = true
+    }
+}

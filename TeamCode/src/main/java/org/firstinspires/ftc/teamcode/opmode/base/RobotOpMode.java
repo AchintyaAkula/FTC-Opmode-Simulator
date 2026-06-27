@@ -110,6 +110,8 @@ public abstract class RobotOpMode extends OpMode {
 
         hubs.forEach(LynxModule::clearBulkCache);
 
+        localizer.update();
+
         Logger.periodicBeforeUser();
 
         Logger.recordOutput("Loop/raw loop time (ms)", timer.getDt());
@@ -117,7 +119,6 @@ public abstract class RobotOpMode extends OpMode {
         Logger.recordOutput("Robot/battery voltage", voltageSensor.getVoltage());
 
         Logger.periodicAfterUser(0,0);
-
     }
 
     @Override

@@ -21,12 +21,6 @@ public abstract class TeleOpMode extends RobotOpMode {
             onFirstDriverInput();
             initialized = true;
         }
-
-        localizer.update();
-
-        Logger.recordOutput("heading", localizer.getPose().getHeading());
-
-        drivetrain.driveFieldCentric(localizer.getPose().getHeading(), (gamepad1.dpad_left ? 1 : 0) - (gamepad1.dpad_right ? 1 : 0), (gamepad1.dpad_up ? 1 : 0) - (gamepad1.dpad_down ? 1 : 0), -gamepad1.right_stick_x);
     }
 
     // allows you to hit play before beginning of teleop and only initialize and move servos after gamepad input has occurred.
