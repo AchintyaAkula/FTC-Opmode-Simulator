@@ -34,7 +34,7 @@ public class FakeDriverStationServer {
         listener = new ServerSocket(PORT);
         listener.setSoTimeout(SOCKET_TIMEOUT_MS);
 
-        //process = startDriverStationProcess();
+        process = startDriverStationProcess();
 
         running = true;
         clientConnected = false;
@@ -66,7 +66,9 @@ public class FakeDriverStationServer {
     private final Set<Integer> heldKeys = new HashSet<>();
 
     public void poll() {
-        if (!running || !clientConnected) {
+        boolean isAlive = process.isAlive();
+        if (!running || !clientConnected || !isAlive) {
+            close();
             return;
         }
 
@@ -121,6 +123,7 @@ public class FakeDriverStationServer {
             out.writeUTF(data);
             out.flush();
         } catch (IOException ignored) {
+            close();
         }
     }
 
@@ -150,6 +153,8 @@ public class FakeDriverStationServer {
         if (process != null) {
             process.destroy();
         }
+
+        state = OpModeState.STOPPED;
 
         log("Driver Station shutdown.");
     }

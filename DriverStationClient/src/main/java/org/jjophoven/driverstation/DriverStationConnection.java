@@ -58,9 +58,6 @@ public class DriverStationConnection {
                     String telemetry = input.readUTF();
                     SwingUtilities.invokeLater(() -> telemetryConsumer.accept(telemetry));
                 }
-                else if (type == CLOSE) {
-                    close();
-                }
             }
         } catch (IOException ignored) {
             close();
@@ -80,6 +77,13 @@ public class DriverStationConnection {
         safe(() -> {
             output.writeByte(STATE_PACKET);
             output.writeByte(state.ordinal());
+            output.flush();
+        });
+    }
+
+    public void sendClose() {
+        safe(() -> {
+            output.writeByte(3);
             output.flush();
         });
     }

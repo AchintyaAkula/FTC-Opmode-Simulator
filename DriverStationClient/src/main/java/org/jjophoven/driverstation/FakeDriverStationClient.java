@@ -45,16 +45,6 @@ public class FakeDriverStationClient extends JFrame {
         this.opModes = opModes;
         initUI();
 
-
-        startDriverStationProcess();
-
-        System.out.println("Waiting for Driver Station to start...");
-        try {
-            Thread.sleep(30000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
         connection = new DriverStationConnection(
                 port,
                 telemetryArea::setText,
@@ -65,77 +55,17 @@ public class FakeDriverStationClient extends JFrame {
                 () -> {
                     connectionLabel.setText("● DISCONNECTED");
                     connectionLabel.setForeground(ACCENT_RED);
+                    dispose();
+                    System.exit(0);
                 }
         );
-    }
-
-    private static Process startDriverStationProcess() {
-        File projectRoot = findProjectRoot();
-        File gradlew = new File(projectRoot, isWindows() ? "gradlew.bat" : "gradlew");
-
-        Process process = null;
-        try {
-            process = new ProcessBuilder(
-                    gradlew.getAbsolutePath(),
-                    "runSimulatorServer"
-            )
-                    .directory(projectRoot)
-                    .redirectErrorStream(true)
-                    .start();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        Process finalProcess = process;
-        new Thread(() -> {
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(finalProcess.getInputStream()))) {
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("[DriverStation SERVER] " + line);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
-        return process;
-    }
-
-    private static File findProjectRoot() {
-        File dir = new File(System.getProperty("user.dir")).getAbsoluteFile();
-
-        while (dir != null) {
-
-            File gradlew = new File(dir, isWindows() ? "gradlew.bat" : "gradlew");
-            File settings = new File(dir, "settings.gradle");
-
-            if (gradlew.exists() && settings.exists()) {
-                return dir;
-            }
-
-            dir = dir.getParentFile();
-        }
-
-        try {
-            throw new IOException("Could not locate project root.");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("win");
-    }
-
-    private static void log(String msg) {
-        System.out.println("[DriverStation] " + msg);
     }
 
     private void initUI() {
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) {
+                connection.sendClose();
                 connection.close();
                 dispose();
                 System.exit(0);
