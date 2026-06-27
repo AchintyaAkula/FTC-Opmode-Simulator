@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import org.jjophoven.driverstation.OpModeState;
 import org.jjophoven.fakehardware.FakeDriverStationServer;
+import org.jjophoven.fakehardware.FakeHardware;
 import org.jjophoven.fakehardware.FakeHardwareMap;
 import org.jjophoven.fakehardware.FakeTelemetry;
 
@@ -16,26 +17,19 @@ public class OpModeSimulator {
         driverStation.startServer();
         driverStation.acceptClient();
 
-        FakeHardwareMap fakeHardwareMap = new FakeHardwareMap();
-        opMode.hardwareMap = fakeHardwareMap;
-        opMode.telemetry = new FakeTelemetry(driverStation);
-        opMode.gamepad1 = driverStation.gamepad1;
-        opMode.gamepad2 = driverStation.gamepad2;
+        FakeHardware hardware = new FakeHardware(opMode, driverStation);
 
         System.out.println(driverStation.state);
 
         while (driverStation.state == OpModeState.WAIT_FOR_INIT) {
-            driverStation.poll();
-
+            hardware.driverStation.poll();
             Thread.sleep(20);
         }
 
         opMode.init();
 
         while (driverStation.state == OpModeState.INITIALIZING) {
-            driverStation.poll();
-
-            fakeHardwareMap.updateHardware();
+            hardware.update();
 
             opMode.init_loop();
 
@@ -45,10 +39,7 @@ public class OpModeSimulator {
         opMode.start();
 
         while (driverStation.state == OpModeState.RUNNING) {
-            driverStation.poll();
-
-
-            fakeHardwareMap.updateHardware();
+            hardware.update();
 
             opMode.loop();
 

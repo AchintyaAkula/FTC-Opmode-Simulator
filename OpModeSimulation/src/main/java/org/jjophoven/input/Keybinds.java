@@ -19,6 +19,8 @@ public class Keybinds {
                         keys.contains(Keys.Q) ? -1 :
                         keys.contains(Keys.E) ? 1 : 0;
 
+        // TODO more keybinds
+
         g.fromByteArray(changes.toByteArray());
     }
 }

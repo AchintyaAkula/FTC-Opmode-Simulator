@@ -1,6 +1,5 @@
 package org.jjophoven.fakehardware;
 
-import com.qualcomm.robotcore.hardware.Gamepad;
 import org.jjophoven.driverstation.OpModeState;
 import org.jjophoven.input.Keybinds;
 
